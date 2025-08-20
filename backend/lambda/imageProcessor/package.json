@@ -1,0 +1,23 @@
+{
+    "name": "image-processor",
+    "version": "1.0.0",
+    "description": "Lambda function for processing images with YOLOv11",
+    "main": "index.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "dependencies": {
+        "aws-sdk": "^2.1450.0",
+        "axios": "^1.5.0"
+    },
+    "devDependencies": {},
+    "keywords": [
+        "aws",
+        "lambda",
+        "yolo",
+        "image-processing",
+        "machine-learning"
+    ],
+    "author": "Your Name",
+    "license": "MIT"
+}

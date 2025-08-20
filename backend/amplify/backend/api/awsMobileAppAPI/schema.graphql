@@ -1,0 +1,49 @@
+type Image @model @auth(rules: [{allow: owner}]) {
+  id: ID!
+  userId: String!
+  imageUrl: String!
+  status: String!
+  results: String
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type DetectionResult {
+  label: String!
+  confidence: Float!
+  bbox: [Float!]!
+}
+
+type ProcessImageResponse {
+  success: Boolean!
+  message: String!
+  detections: [DetectionResult!]
+  imageId: String
+}
+
+type Mutation {
+  processImage(imageUrl: String!, userId: String!): ProcessImageResponse
+    @function(name: "imageProcessor")
+    @auth(rules: [{allow: private}])
+  
+  updateImageStatus(imageId: ID!, status: String!, results: String): Image
+    @auth(rules: [{allow: owner}])
+}
+
+type Query {
+  getImage(id: ID!): Image
+    @auth(rules: [{allow: owner}])
+  
+  listImages(userId: String!): [Image!]
+    @auth(rules: [{allow: owner}])
+}
+
+type Subscription {
+  onImageProcessed(userId: String!): Image
+    @aws_subscribe(mutations: ["updateImageStatus"])
+    @auth(rules: [{allow: owner}])
+  
+  onImageStatusChanged(imageId: ID!): Image
+    @aws_subscribe(mutations: ["updateImageStatus"])
+    @auth(rules: [{allow: owner}])
+}
