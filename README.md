@@ -1,182 +1,158 @@
 # AWS Mobile Application with ML Image Detection
 
 ## Project Overview
-A Flutter mobile application that captures images, processes them through YOLOv11 for object detection, and provides real-time feedback via AWS services.
+
+A Flutter mobile application that captures images, uploads them to AWS, and processes them through YOLOv11 for object detection using AWS API Gateway.
 
 ## Architecture
+
 ```
-┌─────────────────┐    ┌──────────────┐    ┌─────────────┐
-│   Flutter App   │───▶│  AWS Cognito │    │  S3 Bucket  │
-│                 │    │ (Auth)       │    │ (Images)    │
-└─────────────────┘    └──────────────┘    └─────────────┘
-         │                       │                   │
-         ▼                       ▼                   ▼
-┌─────────────────┐    ┌──────────────┐    ┌─────────────┐
-│  AppSync API    │───▶│ Lambda Func  │───▶│ YOLOv11     │
-│ (Controller)    │    │ (Processor)  │    │ Model       │
-└─────────────────┘    └──────────────┘    └─────────────┘
-         │                       │
-         ▼                       ▼
-┌─────────────────┐    ┌──────────────┐
-│  Amazon Pinpoint│◀───│  Results     │
-│ (Notifications) │    │  Processing  │
-└─────────────────┘    └──────────────┘
+┌─────────────────┐
+│   Flutter App   │
+│                 │
+└─────────────────┘
+         │
+         ▼
+┌─────────────────┐    ┌─────────────┐
+│  API Gateway    │───▶│  S3 Bucket  │
+│  (REST API)     │    │ (Images)    │
+└─────────────────┘    └─────────────┘
+         │
+         ▼
+┌─────────────────────────────────┐
+│  ML Processing Backend          │
+│  (To be implemented)            │
+└─────────────────────────────────┘
 ```
 
 ## Tech Stack
+
 - **Frontend**: Flutter (Mobile App)
-- **Authentication**: AWS Cognito
-- **Backend**: AWS AppSync (GraphQL)
+- **Backend**: AWS API Gateway (REST API)
 - **Storage**: Amazon S3
-- **Compute**: AWS Lambda
-- **ML Model**: YOLOv11 (Object Detection)
-- **Notifications**: Amazon Pinpoint
-- **Hosting**: AWS Amplify
+- **ML Model**: YOLOv11 (Object Detection) - To be integrated
 
 ## Implementation Steps
 
 ### Phase 1: AWS Infrastructure Setup
+
 1. **AWS Account & IAM Setup**
+
    - Create AWS account
    - Set up IAM roles and policies
    - Configure AWS CLI
 
 2. **S3 Bucket Configuration**
-   - Create buckets for images and ML models
+
+   - Create bucket for image uploads
    - Configure CORS policies
    - Set up lifecycle policies
+   - Enable presigned URL generation
 
-3. **AWS Cognito Setup**
-   - Create User Pool
-   - Configure Identity Pool
-   - Set up authentication flows
-
-4. **AppSync API Setup**
-   - Create GraphQL API
-   - Define schema for image processing
-   - Configure resolvers
-
-5. **Lambda Function Setup**
-   - Create Lambda function for image processing
-   - Configure environment variables
-   - Set up IAM roles
-
-6. **Amazon Pinpoint Setup**
-   - Create Pinpoint project
-   - Configure push notifications
-   - Set up user segmentation
+3. **API Gateway Setup**
+   - Create REST API
+   - Configure endpoints for:
+     - Image upload (presigned URL generation)
+     - Image processing job submission
+     - Job status polling
+   - Set up request/response models
+   - Configure CORS
 
 ### Phase 2: Flutter Application Development
-1. **Project Setup**
-   - Initialize Flutter project
-   - Configure AWS Amplify
-   - Set up dependencies
 
-2. **Authentication Module**
-   - Implement Cognito integration
-   - Create login/signup screens
-   - Handle authentication state
+1. **Camera Module**
 
-3. **Camera Module**
    - Integrate camera functionality
    - Implement image capture
    - Add image preview
 
-4. **Image Upload Module**
-   - Implement S3 upload
+2. **Image Upload Module**
+
+   - Request presigned URLs from API Gateway
+   - Upload to S3 using presigned URLs
    - Add progress indicators
    - Handle upload errors
 
-5. **Real-time Updates**
-   - Implement AppSync subscriptions
-   - Handle real-time status updates
+3. **Processing Module**
+   - Submit processing jobs via API
+   - Poll job status
    - Display processing results
 
-6. **Notification Module**
-   - Integrate Pinpoint notifications
-   - Handle push notifications
-   - Display results
+### Phase 3: Backend Processing (To be implemented)
 
-### Phase 3: ML Model Integration
-1. **YOLOv11 Model Setup**
-   - Download pre-trained model
-   - Optimize for Lambda deployment
-   - Test model performance
-
-2. **Lambda Function Development**
-   - Implement image preprocessing
-   - Integrate YOLOv11 inference
-   - Add result formatting
-
-3. **Model Deployment**
-   - Deploy model to S3
-   - Configure Lambda to access model
-   - Test end-to-end pipeline
+1. **ML Processing Service**
+   - Set up processing infrastructure
+   - Integrate YOLOv11 model
+   - Implement API endpoints for job processing
 
 ### Phase 4: Testing & Deployment
-1. **Testing**
-   - Unit tests for Lambda functions
-   - Integration tests for API
-   - End-to-end testing
 
-2. **Amplify Deployment**
-   - Configure Amplify hosting
-   - Set up CI/CD pipeline
-   - Deploy to production
+1. **Testing**
+   - Integration tests for API Gateway
+   - End-to-end testing
+   - Mobile app testing
 
 ## Project Structure
+
 ```
 aws-mobile-app/
 ├── mobile-app/                 # Flutter application
 │   ├── lib/
 │   │   ├── main.dart
-│   │   ├── screens/
-│   │   ├── services/
-│   │   ├── models/
-│   │   └── utils/
+│   │   ├── config/            # API configuration
+│   │   ├── screens/           # UI screens
+│   │   │   ├── auth/         # Login/Signup
+│   │   │   └── home/         # Camera, Home, Results
+│   │   ├── services/          # API clients and services
+│   │   ├── models/            # Data models
+│   │   └── providers/         # State management
 │   ├── pubspec.yaml
 │   └── android/
-├── backend/                    # AWS backend resources
-│   ├── amplify/
-│   ├── lambda/
-│   ├── appsync/
-│   └── s3/
-├── ml-model/                   # YOLOv11 model files
-├── docs/                       # Documentation
-└── scripts/                    # Deployment scripts
+└── README.md
 ```
 
 ## Prerequisites
-- AWS Account
+
+- AWS Account with API Gateway and S3 access
 - Flutter SDK (3.0+)
-- AWS CLI
-- Node.js & npm
+- AWS CLI configured
 - Android Studio / Xcode
 
 ## Getting Started
+
 1. Clone this repository
-2. Follow the setup instructions in each phase
-3. Configure AWS credentials
-4. Run the application
+2. Navigate to `mobile-app/` directory
+3. Run `flutter pub get` to install dependencies
+4. Configure API Gateway endpoint in `lib/config/api_config.dart`
+5. Run the application: `flutter run`
 
 ## Cost Estimation
-- **AWS Cognito**: ~$0.55 per 10,000 MAUs
-- **S3**: ~$0.023 per GB
-- **Lambda**: ~$0.20 per 1M requests
-- **AppSync**: ~$4.00 per million operations
-- **Pinpoint**: ~$0.50 per 1M events
+
+- **S3**: ~\$0.023 per GB storage
+- **API Gateway**: ~\$1.00 per million requests
+- **Data Transfer**: Varies by region
 
 ## Security Considerations
+
 - Implement proper IAM roles and policies
-- Use Cognito for user authentication
-- Secure S3 bucket access
-- Implement API rate limiting
+- Secure S3 bucket with presigned URLs
+- Implement API Gateway authentication (API keys/JWT)
+- Enable CORS properly
 - Use HTTPS for all communications
 
+## Current Status
+
+✅ Flutter mobile app with camera functionality
+✅ Authentication UI ready
+✅ Image upload service configured for presigned URLs
+✅ Processing service ready for API Gateway integration
+⏳ API Gateway configuration needed
+⏳ Backend ML processing to be implemented
+
 ## Next Steps
-1. Set up AWS infrastructure
-2. Initialize Flutter project
-3. Implement authentication
-4. Add camera functionality
-5. Integrate ML model
-6. Deploy and test
+
+1. Set up AWS API Gateway with required endpoints
+2. Configure S3 bucket with CORS
+3. Test presigned URL generation
+4. Implement backend processing service
+5. Integrate YOLOv11 for object detection
