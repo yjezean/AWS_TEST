@@ -1,124 +1,67 @@
-import 'package:amplify_flutter/amplify_flutter.dart';
-import 'package:amplify_auth_cognito/amplify_auth_cognito.dart';
+import '../models/app_user.dart';
+import 'api_client.dart';
+import 'token_storage.dart';
 
 class AuthService {
-  Future<AuthUser?> getCurrentUser() async {
-    try {
-      final user = await Amplify.Auth.getCurrentUser();
-      return user;
-    } catch (e) {
-      // User not signed in
-      return null;
-    }
+  final ApiClient _api = ApiClient();
+  final TokenStorage _tokens = TokenStorage();
+  Future<AppUser?> getCurrentUser() async {
+    // TODO: Replace with API-backed token lookup (e.g., decode stored JWT or /me)
+    return null;
   }
 
-  Future<AuthUser> signIn(String username, String password) async {
-    try {
-      final result = await Amplify.Auth.signIn(
-        username: username,
-        password: password,
-      );
-      return result.user;
-    } catch (e) {
-      throw _handleAuthException(e);
+  Future<AppUser> signIn(String username, String password) async {
+    if (username.isEmpty || password.isEmpty) {
+      throw 'Username and password are required';
     }
+    // TODO: Replace endpoint and mapping with your API
+    final resp = await _api.post<Map<String, dynamic>>('/auth/login', data: {
+      'username': username,
+      'password': password,
+    });
+    final data = resp.data as Map<String, dynamic>;
+    final access = data['accessToken'] as String?;
+    final refresh = data['refreshToken'] as String?;
+    if (access != null) {
+      await _tokens.saveTokens(accessToken: access, refreshToken: refresh);
+    }
+    return AppUser(
+      id: (data['user']?['id'] ?? username).toString(),
+      username: data['user']?['username']?.toString() ?? username,
+      email: data['user']?['email']?.toString(),
+    );
   }
 
-  Future<AuthUser> signUp(String username, String email, String password) async {
-    try {
-      final result = await Amplify.Auth.signUp(
-        username: username,
-        password: password,
-        options: SignUpOptions(
-          userAttributes: {
-            AuthUserAttributeKey.email: email,
-          },
-        ),
-      );
-      
-      // Auto-confirm the user (for development)
-      // In production, you should implement email verification
-      if (result.nextStep.signUpStep == AuthSignUpStep.confirmSignUp) {
-        await Amplify.Auth.confirmSignUp(
-          username: username,
-          confirmationCode: '123456', // Default code for development
-        );
-      }
-      
-      return result.user;
-    } catch (e) {
-      throw _handleAuthException(e);
+  Future<AppUser> signUp(String username, String email, String password) async {
+    // TODO: Call API Gateway: POST /auth/signup
+    if (username.isEmpty || password.isEmpty) {
+      throw 'Username and password are required';
     }
+    return AppUser(id: 'temp-id', username: username, email: email);
   }
 
   Future<void> signOut() async {
-    try {
-      await Amplify.Auth.signOut();
-    } catch (e) {
-      throw _handleAuthException(e);
-    }
+    await _tokens.clear();
   }
 
   Future<void> confirmSignUp(String username, String confirmationCode) async {
-    try {
-      await Amplify.Auth.confirmSignUp(
-        username: username,
-        confirmationCode: confirmationCode,
-      );
-    } catch (e) {
-      throw _handleAuthException(e);
-    }
+    // TODO: Call API Gateway: POST /auth/confirm
+    return;
   }
 
   Future<void> resendSignUpCode(String username) async {
-    try {
-      await Amplify.Auth.resendSignUpCode(username: username);
-    } catch (e) {
-      throw _handleAuthException(e);
-    }
+    // TODO: Call API Gateway: POST /auth/resend
+    return;
   }
 
   Future<void> forgotPassword(String username) async {
-    try {
-      await Amplify.Auth.resetPassword(username: username);
-    } catch (e) {
-      throw _handleAuthException(e);
-    }
+    // TODO: Call API Gateway: POST /auth/forgot
+    return;
   }
 
-  Future<void> confirmPassword(String username, String newPassword, String confirmationCode) async {
-    try {
-      await Amplify.Auth.confirmResetPassword(
-        username: username,
-        newPassword: newPassword,
-        confirmationCode: confirmationCode,
-      );
-    } catch (e) {
-      throw _handleAuthException(e);
-    }
-  }
-
-  String _handleAuthException(dynamic exception) {
-    if (exception is AuthException) {
-      switch (exception.type) {
-        case AuthExceptionType.userNotFound:
-          return 'User not found. Please check your username.';
-        case AuthExceptionType.notAuthorized:
-          return 'Invalid username or password.';
-        case AuthExceptionType.invalidPassword:
-          return 'Password does not meet requirements.';
-        case AuthExceptionType.usernameExists:
-          return 'Username already exists.';
-        case AuthExceptionType.codeMismatch:
-          return 'Invalid confirmation code.';
-        case AuthExceptionType.codeExpired:
-          return 'Confirmation code has expired.';
-        case AuthExceptionType.limitExceeded:
-          return 'Too many attempts. Please try again later.';
-        default:
-          return 'Authentication error: ${exception.message}';
-      }
-    }
-    return 'An unexpected error occurred: $exception';
+  Future<void> confirmPassword(
+      String username, String newPassword, String confirmationCode) async {
+    // TODO: Call API Gateway: POST /auth/reset/confirm
+    return;
   }
 }

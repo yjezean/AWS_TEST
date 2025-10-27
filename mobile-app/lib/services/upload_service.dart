@@ -1,25 +1,31 @@
-import 'package:amplify_storage_s3/amplify_storage_s3.dart';
-import 'package:amplify_flutter/amplify_flutter.dart';
 import 'dart:io';
+import 'package:dio/dio.dart';
+import '../config/api_config.dart';
+import 'api_client.dart';
 
 class UploadService {
+  final Dio _dio = Dio();
+  final ApiClient _api = ApiClient();
+
   Future<String> uploadImage(File imageFile) async {
     try {
-      final key = 'images/${DateTime.now().millisecondsSinceEpoch}_${imageFile.path.split('/').last}';
-      
-      final result = await Amplify.Storage.uploadFile(
-        local: imageFile,
-        key: key,
-        options: StorageUploadFileOptions(
-          accessLevel: StorageAccessLevel.private,
-          metadata: {
-            'uploadedAt': DateTime.now().toIso8601String(),
-            'originalName': imageFile.path.split('/').last,
-          },
-        ),
-      ).result;
-      
-      return result.key;
+      // TODO: Call API Gateway to get presigned URL
+      final filename = imageFile.path.split('/').last;
+      final presign =
+          await _api.post<Map<String, dynamic>>('/uploads/presign', data: {
+        'filename': filename,
+        'contentType': 'application/octet-stream',
+      });
+      final data = presign.data as Map<String, dynamic>;
+      final url = data['url'] as String;
+
+      final bytes = await imageFile.readAsBytes();
+      await _dio.put(url,
+          data: bytes,
+          options:
+              Options(headers: {'Content-Type': 'application/octet-stream'}));
+      return data['key']?.toString() ??
+          url; // Prefer returning S3 key if provided
     } catch (e) {
       throw Exception('Failed to upload image: $e');
     }
@@ -32,61 +38,5 @@ class UploadService {
     } catch (e) {
       throw Exception('Failed to upload image from path: $e');
     }
-  }
-
-  Future<void> deleteImage(String imageKey) async {
-    try {
-      await Amplify.Storage.remove(
-        key: imageKey,
-        options: StorageRemoveOptions(
-          accessLevel: StorageAccessLevel.private,
-        ),
-      ).result;
-    } catch (e) {
-      throw Exception('Failed to delete image: $e');
-    }
-  }
-
-  Future<String> getImageUrl(String imageKey) async {
-    try {
-      final result = await Amplify.Storage.getUrl(
-        key: imageKey,
-        options: StorageGetUrlOptions(
-          accessLevel: StorageAccessLevel.private,
-          expires: 3600, // 1 hour
-        ),
-      ).result;
-      
-      return result.url.toString();
-    } catch (e) {
-      throw Exception('Failed to get image URL: $e');
-    }
-  }
-
-  Future<List<StorageItem>> listImages() async {
-    try {
-      final result = await Amplify.Storage.list(
-        options: StorageListOptions(
-          accessLevel: StorageAccessLevel.private,
-          path: 'images/',
-        ),
-      ).result;
-      
-      return result.items;
-    } catch (e) {
-      throw Exception('Failed to list images: $e');
-    }
-  }
-
-  Stream<StorageUploadProgress> uploadImageWithProgress(File imageFile) {
-    final key = 'images/${DateTime.now().millisecondsSinceEpoch}_${imageFile.path.split('/').last}';
-    
-    return Amplify.Storage.uploadFile(
-      local: imageFile,
-      key: key,
-      options: StorageUploadFileOptions(
-        accessLevel: StorageAccessLevel.private,
-      ),
-    ).progress;
   }
 }

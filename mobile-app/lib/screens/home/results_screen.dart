@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'dart:io';
+import '../../services/upload_service.dart';
+import '../../services/processing_service.dart';
+import '../../models/processing_models.dart';
 
 class ResultsScreen extends StatefulWidget {
   final String imagePath;
@@ -19,6 +22,8 @@ class _ResultsScreenState extends State<ResultsScreen> {
   bool _isLoading = true;
   List<DetectionResult> _detections = [];
   String? _error;
+  final UploadService _uploadService = UploadService();
+  final ProcessingService _processingService = ProcessingService();
 
   @override
   void initState() {
@@ -28,32 +33,36 @@ class _ResultsScreenState extends State<ResultsScreen> {
 
   Future<void> _processImage() async {
     try {
-      // Simulate API call to process image
-      await Future.delayed(const Duration(seconds: 3));
-      
-      // Mock detection results
-      _detections = [
-        DetectionResult(
-          label: 'Person',
-          confidence: 0.95,
-          bbox: [100, 150, 300, 500],
-        ),
-        DetectionResult(
-          label: 'Car',
-          confidence: 0.87,
-          bbox: [400, 200, 600, 350],
-        ),
-        DetectionResult(
-          label: 'Building',
-          confidence: 0.78,
-          bbox: [50, 50, 700, 400],
-        ),
-      ];
+      // 1) Upload file to S3 via presigned URL
+      final uploadedKeyOrUrl =
+          await _uploadService.uploadImage(File(widget.imagePath));
 
-      setState(() {
-        _isLoading = false;
-      });
+      // 2) Submit processing job
+      final submit = await _processingService.submitProcessing(
+          imageKeyOrUrl: uploadedKeyOrUrl);
+
+      // 3) Poll until completed/failed
+      await for (final status
+          in _processingService.pollJobStatus(submit.jobId)) {
+        if (!mounted) return;
+        if (status.status == 'COMPLETED') {
+          setState(() {
+            _detections = status.detections;
+            _isLoading = false;
+          });
+          break;
+        }
+        if (status.status == 'FAILED') {
+          setState(() {
+            _error = status.message ?? 'Processing failed';
+            _isLoading = false;
+          });
+          break;
+        }
+        // Otherwise continue polling
+      }
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _error = e.toString();
         _isLoading = false;
@@ -174,9 +183,10 @@ class _ResultsScreenState extends State<ResultsScreen> {
                       const SizedBox(width: 8),
                       Text(
                         'Detection Results',
-                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                        style:
+                            Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
                       ),
                     ],
                   ),
@@ -184,8 +194,8 @@ class _ResultsScreenState extends State<ResultsScreen> {
                   Text(
                     'Found ${_detections.length} objects in the image',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Colors.grey[600],
-                    ),
+                          color: Colors.grey[600],
+                        ),
                   ),
                 ],
               ),
@@ -297,16 +307,4 @@ class _ResultsScreenState extends State<ResultsScreen> {
       return Colors.red;
     }
   }
-}
-
-class DetectionResult {
-  final String label;
-  final double confidence;
-  final List<double> bbox;
-
-  DetectionResult({
-    required this.label,
-    required this.confidence,
-    required this.bbox,
-  });
 }

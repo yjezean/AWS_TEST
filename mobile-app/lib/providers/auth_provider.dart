@@ -1,18 +1,18 @@
 import 'package:flutter/foundation.dart';
-import 'package:amplify_flutter/amplify_flutter.dart';
 import '../services/auth_service.dart';
+import '../models/app_user.dart';
 
 class AuthProvider with ChangeNotifier {
   final AuthService _authService = AuthService();
-  
+
   bool _isAuthenticated = false;
   bool _isLoading = true;
-  AuthUser? _currentUser;
+  AppUser? _currentUser;
   String? _error;
 
   bool get isAuthenticated => _isAuthenticated;
   bool get isLoading => _isLoading;
-  AuthUser? get currentUser => _currentUser;
+  AppUser? get currentUser => _currentUser;
   String? get error => _error;
 
   AuthProvider() {
@@ -39,11 +39,11 @@ class AuthProvider with ChangeNotifier {
     try {
       _setLoading(true);
       _clearError();
-      
+
       final user = await _authService.signIn(username, password);
       _currentUser = user;
       _isAuthenticated = true;
-      
+
       notifyListeners();
       return true;
     } catch (e) {
@@ -59,11 +59,11 @@ class AuthProvider with ChangeNotifier {
     try {
       _setLoading(true);
       _clearError();
-      
+
       final user = await _authService.signUp(username, email, password);
       _currentUser = user;
       _isAuthenticated = true;
-      
+
       notifyListeners();
       return true;
     } catch (e) {
@@ -79,10 +79,10 @@ class AuthProvider with ChangeNotifier {
     try {
       _setLoading(true);
       await _authService.signOut();
-      
+
       _currentUser = null;
       _isAuthenticated = false;
-      
+
       notifyListeners();
     } catch (e) {
       _error = e.toString();
