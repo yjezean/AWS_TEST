@@ -2,10 +2,30 @@ import '../models/app_user.dart';
 import 'api_client.dart';
 import 'token_storage.dart';
 
+/// Development bypass flag - set to false when real auth is configured
+const bool _bypassAuth = true;
+
+/// Default development credentials
+const String _defaultUsername = 'testuser';
+const String _defaultPassword = 'testpass123';
+
 class AuthService {
   final ApiClient _api = ApiClient();
   final TokenStorage _tokens = TokenStorage();
+
   Future<AppUser?> getCurrentUser() async {
+    if (_bypassAuth) {
+      // In bypass mode, check if we have a stored token (from previous sessions)
+      final token = await _tokens.getAccessToken();
+      if (token != null && token.isNotEmpty) {
+        return const AppUser(
+          id: 'dev-user-1',
+          username: _defaultUsername,
+          email: 'testuser@example.com',
+        );
+      }
+      return null;
+    }
     // TODO: Replace with API-backed token lookup (e.g., decode stored JWT or /me)
     return null;
   }
@@ -14,7 +34,33 @@ class AuthService {
     if (username.isEmpty || password.isEmpty) {
       throw 'Username and password are required';
     }
-    // TODO: Replace endpoint and mapping with your API
+
+    // Development bypass mode - accepts default credentials
+    if (_bypassAuth) {
+      // Accept any credentials or validate against defaults
+      if (username == _defaultUsername && password == _defaultPassword) {
+        // Save a dummy token for session persistence
+        await _tokens.saveTokens(
+          accessToken: 'dev-token-${DateTime.now().millisecondsSinceEpoch}',
+        );
+        return const AppUser(
+          id: 'dev-user-1',
+          username: _defaultUsername,
+          email: 'testuser@example.com',
+        );
+      }
+      // In bypass mode, accept any credentials for convenience
+      await _tokens.saveTokens(
+        accessToken: 'dev-token-${DateTime.now().millisecondsSinceEpoch}',
+      );
+      return AppUser(
+        id: 'dev-user-${username.hashCode}',
+        username: username,
+        email: '$username@example.com',
+      );
+    }
+
+    // Real API authentication
     final resp = await _api.post<Map<String, dynamic>>('/auth/login', data: {
       'username': username,
       'password': password,
@@ -33,10 +79,23 @@ class AuthService {
   }
 
   Future<AppUser> signUp(String username, String email, String password) async {
-    // TODO: Call API Gateway: POST /auth/signup
     if (username.isEmpty || password.isEmpty) {
       throw 'Username and password are required';
     }
+
+    // Development bypass mode
+    if (_bypassAuth) {
+      await _tokens.saveTokens(
+        accessToken: 'dev-token-${DateTime.now().millisecondsSinceEpoch}',
+      );
+      return AppUser(
+        id: 'dev-user-${username.hashCode}',
+        username: username,
+        email: email,
+      );
+    }
+
+    // TODO: Call API Gateway: POST /auth/signup
     return AppUser(id: 'temp-id', username: username, email: email);
   }
 

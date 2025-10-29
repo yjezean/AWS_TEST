@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'package:dio/dio.dart';
 import '../models/processing_models.dart';
 import 'api_client.dart';
 
@@ -9,13 +8,13 @@ class ProcessingService {
   Future<SubmitJobResponse> submitProcessing(
       {required String imageKeyOrUrl}) async {
     final resp = await _api.post<Map<String, dynamic>>('/process', data: {
-      'image': imageKeyOrUrl,
+      'imageUrls': [imageKeyOrUrl],
     });
     return SubmitJobResponse.fromJson(resp.data as Map<String, dynamic>);
   }
 
   Future<JobStatusResponse> getJobStatus(String jobId) async {
-    final resp = await _api.get<Map<String, dynamic>>('/process/$jobId');
+    final resp = await _api.get<Map<String, dynamic>>('/jobs/$jobId');
     return JobStatusResponse.fromJson(resp.data as Map<String, dynamic>);
   }
 

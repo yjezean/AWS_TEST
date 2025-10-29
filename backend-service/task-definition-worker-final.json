@@ -1,0 +1,43 @@
+{
+  "family": "yolo-worker",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "2048",
+  "memory": "4096",
+  "executionRoleArn": "arn:aws:iam::998122310526:role/LabRole",
+  "taskRoleArn": "arn:aws:iam::998122310526:role/LabRole",
+  "containerDefinitions": [
+    {
+      "name": "yolo-worker",
+      "image": "998122310526.dkr.ecr.us-east-1.amazonaws.com/test/yolo-detector:latest",
+      "essential": true,
+      "environment": [
+        {
+          "name": "AWS_DEFAULT_REGION",
+          "value": "us-east-1"
+        },
+        {
+          "name": "SQS_QUEUE_URL",
+          "value": "https://sqs.us-east-1.amazonaws.com/998122310526/vehicle-damage-processing"
+        },
+        {
+          "name": "S3_BUCKET",
+          "value": "yolo-vehicle-damage-8751"
+        },
+        {
+          "name": "DYNAMODB_TABLE",
+          "value": "VehicleDamageJobs"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/yolo-worker",
+          "awslogs-region": "us-east-1",
+          "awslogs-stream-prefix": "ecs",
+          "awslogs-create-group": "true"
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "family": "yolov11-worker-task",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "2048",
+  "memory": "4096",
+  "executionRoleArn": "arn:aws:iam::YOUR_ACCOUNT_ID:role/ecsTaskExecutionRole",
+  "taskRoleArn": "arn:aws:iam::YOUR_ACCOUNT_ID:role/ecsTaskRole",
+  "containerDefinitions": [
+    {
+      "name": "yolov11-worker",
+      "image": "YOUR_ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com/yolov11-worker:latest",
+      "essential": true,
+      "environment": [
+        {
+          "name": "MODEL_PATH",
+          "value": "yolov11n.pt"
+        },
+        {
+          "name": "SQS_QUEUE_URL",
+          "value": "https://sqs.us-east-1.amazonaws.com/YOUR_ACCOUNT_ID/image-processing-queue"
+        },
+        {
+          "name": "JOBS_TABLE_NAME",
+          "value": "image-processing-jobs"
+        },
+        {
+          "name": "LOG_LEVEL",
+          "value": "INFO"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-create-group": "true",
+          "awslogs-group": "/ecs/yolov11-worker",
+          "awslogs-region": "us-east-1",
+          "awslogs-stream-prefix": "ecs"
+        }
+      }
+    }
+  ]
+}

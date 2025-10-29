@@ -47,12 +47,20 @@ class JobStatusResponse {
       {required this.status, required this.detections, this.message});
 
   factory JobStatusResponse.fromJson(Map<String, dynamic> json) {
-    final detectionsJson = (json['detections'] as List?) ?? [];
+    // Backend returns detections as a list of image results:
+    // [{ imageUrl, imageIndex, detectionCount, detections: [ {label, confidence, bbox[]} ] }]
+    final perImage = (json['detections'] as List?) ?? [];
+    final flattened = <DetectionResult>[];
+    if (perImage.isNotEmpty) {
+      final first = perImage.first as Map<String, dynamic>;
+      final dets = (first['detections'] as List?) ?? [];
+      flattened.addAll(dets
+          .map((e) => DetectionResult.fromJson(e as Map<String, dynamic>))
+          .toList());
+    }
     return JobStatusResponse(
       status: json['status']?.toString() ?? 'PENDING',
-      detections: detectionsJson
-          .map((e) => DetectionResult.fromJson(e as Map<String, dynamic>))
-          .toList(),
+      detections: flattened,
       message: json['message']?.toString(),
     );
   }

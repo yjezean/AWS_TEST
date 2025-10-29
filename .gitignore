@@ -1,0 +1,63 @@
+# Flutter/Dart
+mobile-app/.dart_tool/
+mobile-app/build/
+mobile-app/.flutter-plugins
+mobile-app/.flutter-plugins-dependencies
+mobile-app/.pub-cache/
+mobile-app/.pub/
+# Note: pubspec.lock should be committed for Flutter apps
+mobile-app/ios/Pods/
+mobile-app/ios/.symlinks/
+mobile-app/ios/Flutter/Flutter.framework
+mobile-app/android/.gradle/
+mobile-app/android/app/build/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# AWS/Build artifacts
+backend-service/**/*.zip
+backend-service/**/*.jar
+backend-service/**/__pycache__/
+backend-service/**/*.pyc
+backend-service/**/*.pyo
+backend-service/**/*.pyd
+backend-service/**/.Python
+backend-service/**/venv/
+backend-service/**/env/
+backend-service/**/.env
+backend-service/**/node_modules/
+
+# Temporary files
+*.log
+*.tmp
+out.json
+*.sample.*
+sample.*
+
+# Test files (keep examples, remove specific test data)
+**/test-*.json
+**/jobkey.json
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+ENV/
+env/
+.venv
+
+# Docker
+.dockerignore
+
